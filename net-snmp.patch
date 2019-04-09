@@ -1,0 +1,198 @@
+diff --git a/win32/build.pl b/win32/build.pl
+index baba02e..6db1893 100644
+--- a/win32/build.pl
++++ b/win32/build.pl
+@@ -19,26 +19,22 @@ if ($target_arch ne "x86" && $target_arch ne "x64") {
+     die;
+ }
+ my @perl_arch = split(/-/, $Config{archname});
+-my $openssl = false;
+-my $default_openssldir = $target_arch eq "x64" ?
+-    "C:\\OpenSSL-Win64" : "C:\\OpenSSL-Win32";
+-my $default_opensslincdir = $default_openssldir . "\\include";
+-my $opensslincdir = $default_opensslincdir;
+-my $default_openssllibdir = $default_openssldir . "\\lib\\VC";
+-my $openssllibdir = $default_openssllibdir;
++my $openssl = true;
++my $opensslincdir = $ENV{'OPENSSL_INCLUDE_PATH'};
++my $openssllibdir = $ENV{'OPENSSL_LIB_PATH'};;
+ my $b_ipv6 = false;
+ my $b_winextdll = false;
+ my $sdk = false;
+-my $default_install_base = "c:/usr";
++my $default_install_base = "c:/net-snmp-install";
+ my $install_base = $default_install_base;
+ my $install = true;
+-my $install_devel = false;
++my $install_devel = true;
+ my $perl = false;
+ my $perl_install = false;
+ my $logging = true;
+ my $debug = false;
+ my $configOpts;
+-my $link_dynamic = false;
++my $link_dynamic = true;
+ my $option;
+ 
+ # Path of this script (source tree path + "win32").
+@@ -52,106 +48,6 @@ if (!defined($ENV{MSVCDir}) && !defined($ENV{VCINSTALLDIR}) &&
+   exit;
+ }
+ 
+-while (1) {
+-  print "\n\nNet-SNMP build and install options\n";
+-  print "==================================\n\n";
+-  print "1.  OpenSSL support:                " . ($openssl ? "enabled" : "disabled"). "\n";
+-  print "2.  OpenSSL include directory:      " . $opensslincdir. "\n";
+-  print "3.  OpenSSL library director:       " . $openssllibdir. "\n";
+-  print "4.  Platform SDK support:           " . ($sdk ? "enabled" : "disabled") . "\n";
+-  print "\n";
+-  print "5.  Install path:                   " . $install_base . "\n";
+-  print "6.  Install after build:            " . ($install ? "enabled" : "disabled") . "\n";
+-  print "\n";
+-  print "7.  Perl modules:                   " . ($perl ? "enabled" : "disabled") . "\n";
+-  print "8.  Install perl modules:           " . ($perl_install ? "enabled" : "disabled") . "\n";
+-  print "\n";
+-  print "9.  Quiet build (logged):           " . ($logging ? "enabled" : "disabled") . "\n";
+-  print "10. Debug mode:                     " . ($debug ? "enabled" : "disabled") . "\n";
+-  print "\n";
+-  print "11. IPv6 transports (requires SDK): " . ($b_ipv6 ? "enabled" : "disabled") . "\n";
+-  print "12. winExtDLL agent (requires SDK): " . ($b_winextdll ? "enabled" : "disabled") . "\n";
+-  print "\n";
+-  print "13. Link type:                      " . ($link_dynamic ? "dynamic" : "static") . "\n";
+-  print "\n";
+-  print "14. Install development files       " . ($install_devel ? "enabled" : "disabled") . "\n";
+-  print "\nF.  Finished - start build\n";
+-  print "Q.  Quit - abort build\n\n";
+-  print "Select option to set / toggle: ";
+-
+-  chomp ($option = <>);
+-  if ($option eq "1") {
+-    $openssl = !$openssl;
+-  }
+-  elsif ($option eq "2") {
+-    print "Please enter the OpenSSL include directory [$opensslincdir]: ";
+-    chomp ($opensslincdir = <>);
+-    $opensslincdir =~ s/\\/\//g;
+-    $opensslincdir = $default_opensslincdir if ($opensslincdir eq "");
+-  }
+-  elsif ($option eq "3") {
+-    print "Please enter the OpenSSL library directory [$openssllibdir]: ";
+-    chomp ($openssllibdir = <>);
+-    $openssllibdir =~ s/\\/\//g;
+-    $openssllibdir = $default_openssllibdir if ($openssllibdir eq "");
+-  }
+-  elsif ($option eq "4") {
+-    $sdk = !$sdk;
+-  }
+-  elsif ($option eq "11") {
+-    $b_ipv6 = !$b_ipv6;
+-    if ($b_ipv6 && !$sdk) {
+-      print "\n\n* SDK required for IPv6 and has been automatically enabled";
+-      $sdk = true;
+-    }
+-  }
+-  elsif ($option eq "12") {
+-    $b_winextdll = !$b_winextdll;
+-    if ($b_winextdll && !$sdk) {
+-      print "\n\n* SDK required for IPv6 and has been automatically enabled";
+-      $sdk = true;
+-    }
+-  }
+-  elsif ($option eq "5") {
+-    print "Please enter the new install path [$default_install_base]: ";
+-    chomp ($install_base = <>);
+-    $install_base =~ s/\\/\//g;
+-    $install_base = $default_install_base if ($install_base eq "");
+-  }
+-  elsif ($option eq "6") {
+-    $install = !$install;
+-  }
+-  elsif ($option eq "14") {
+-    $install_devel = !$install_devel;
+-  }
+-  elsif ($option eq "7") {
+-    $perl = !$perl;
+-  }
+-  elsif ($option eq "8") {
+-    $perl_install = !$perl_install;
+-  }
+-  elsif ($option eq "9") {
+-    $logging = !$logging;
+-  }
+-  elsif ($option eq "10") {
+-    $debug = !$debug;
+-  }
+-  elsif ($option eq "13") {
+-    $link_dynamic = !$link_dynamic;
+-  }
+-  elsif (lc($option) eq "f") {
+-    last;
+-  }
+-  elsif (lc($option) eq "q") {
+-    exit;
+-  }
+-}
+-
+-if ($perl && $perl_arch[1] ne $target_arch) {
+-    print "perl_arch = $perl_arch[1] does not match target_arch = $target_arch\n";
+-    die;
+-}
+-
+ my $linktype = $link_dynamic ? "dynamic" : "static";
+ $configOpts = (($openssl ? "--with-ssl" : "")		. " " .
+                ($opensslincdir ? "--with-sslincdir=$opensslincdir" : "") . " " .
+diff --git a/win32/net-snmp/net-snmp-config.h.in b/win32/net-snmp/net-snmp-config.h.in
+index 6d0417b..58e1e9d 100644
+--- a/win32/net-snmp/net-snmp-config.h.in
++++ b/win32/net-snmp/net-snmp-config.h.in
+@@ -1365,7 +1365,7 @@
+ 
+ /* If you have openssl 0.9.7 or above, you likely have AES support. */
+ /* #undef NETSNMP_USE_OPENSSL */
+-
++#define NETSNMP_USE_OPENSSL 1
+ #ifdef NETSNMP_USE_OPENSSL
+ 
+ #define HAVE_LIBSSL 1
+@@ -1712,6 +1712,7 @@ enum {
+ 
+ /* Define NETSNMP_USE_DLL when building or using netsnmp.DLL */
+ /* #undef NETSNMP_USE_DLL */
++#define NETSNMP_USE_DLL 1
+ 
+ #if defined(NETSNMP_DLL) && !defined(NETSNMP_USE_DLL)
+ #error NETSNMP_USE_DLL must be defined when building libsnmp as a DLL.
+@@ -1746,26 +1747,26 @@ enum {
+ #    ifdef _DLL
+ #      ifdef _DEBUG
+ #        ifdef OPENSSL_BEFORE_1_1_0
+-#          pragma comment(lib, "libeay32MDd.lib")
++#          pragma comment(lib, "libeay32.lib")
+ #        else
+ #          ifdef _M_X64
+ #            pragma comment(lib, "libcrypto64MDd.lib")
+ #            pragma comment(lib, "libssl64MDd.lib")
+ #          else
+-#            pragma comment(lib, "libcrypto32MDd.lib")
+-#            pragma comment(lib, "libssl32MDd.lib")
++#            pragma comment(lib, "libcrypto.lib")
++#            pragma comment(lib, "libssl.lib")
+ #          endif
+ #        endif
+ #      else
+ #        ifdef OPENSSL_BEFORE_1_1_0
+-#          pragma comment(lib, "libeay32MD.lib")
++#          pragma comment(lib, "libeay32.lib")
+ #        else
+ #          ifdef _M_X64
+ #            pragma comment(lib, "libcrypto64MD.lib")
+ #            pragma comment(lib, "libssl64MD.lib")
+ #          else
+-#            pragma comment(lib, "libcrypto32MD.lib")
+-#            pragma comment(lib, "libssl32MD.lib")
++#            pragma comment(lib, "libcrypto.lib")
++#            pragma comment(lib, "libssl.lib")
+ #          endif
+ #        endif
+ #      endif

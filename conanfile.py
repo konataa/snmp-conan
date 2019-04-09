@@ -20,7 +20,7 @@ class SnmpConan(ConanFile):
 
     def source(self):
         git = tools.Git(folder="net-snmp")
-        git.clone("C:\\Workspace\\net-snmp-5.8", "master")
+        git.clone("https://github.com/konataa/net-snmp.git", "master")
         tools.patch(patch_file="net-snmp.patch", base_path=os.path.join(os.getcwd(), "net-snmp"))
     
     

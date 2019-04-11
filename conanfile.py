@@ -9,7 +9,7 @@ class SnmpConan(ConanFile):
     author = "InSAT"
     description = "net-snmp package"
     topics = ("net-snmp", "snmp")
-    settings = "os", "arch", "compiler"
+    settings = "os", "arch", "compiler", "arch_build"
     options = {"shared": [True, False]}
     default_options = {"shared": True}
     requires = "OpenSSL/1.1.1@conan/stable"
@@ -24,20 +24,23 @@ class SnmpConan(ConanFile):
 
     def source(self):
         git = tools.Git(folder="net-snmp")
-        git.clone("/home/parallels/net-snmp-5.8", "master")
+        git.clone("https://github.com/konataa/net-snmp.git", "master")
         if self.settings.os == "Windows":
             tools.patch(patch_file="net-snmp.patch", base_path=os.path.join(os.getcwd(), "net-snmp"))
 
     def linux_build(self):
         env_build = AutoToolsBuildEnvironment(self)
-        configure = "./configure --with-default-snmp-version=3 \
-        --with-sys-contact=@@no.where --with-sys-location=Unknown \
-        --with-logfile=/var/log/snmpd.log \
-        --with-persistent-directory=/var/net-snmp \
-        --prefix=%s" % (os.path.join(self.source_folder, "net-snmp"))
-
         with tools.chdir(os.path.join(self.source_folder, "net-snmp")):
-            self.run("chmod 755 configure")
+            configure = "./configure --with-default-snmp-version=3 \
+            --with-sys-contact=@@no.where --with-sys-location=Unknown \
+            --with-logfile=/var/log/snmpd.log \
+            --with-persistent-directory=/var/net-snmp \
+            --disable-manuals \
+            --disable-embedded-perl \
+            --disable-perl-cc-checks\
+            --with-openssl=%s \
+            --prefix=%s" % (self.deps_cpp_info["OpenSSL"].rootpath, os.getcwd())
+            #env_build.configure(args=[configure], build=False, host=False, use_default_install_dirs=False)
             self.run(configure)
             env_build.make()
             env_build.install()

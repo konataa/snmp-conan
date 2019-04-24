@@ -9,12 +9,17 @@ class SnmpConan(ConanFile):
     author = "Amina Ramazanova / InSAT"
     description = "net-snmp package"
     topics = ("net-snmp", "snmp")
+    scm = {
+         "type": "git",
+         "subfolder": "net-snmp",
+         "url": "http://dev.arenoros.info/MS4/Library/_git/net-snmp",
+         "revision": "net-snmp-with-openssl"
+    }
     settings = "os", "arch", "compiler", "arch_build"
     options = {"shared": [True, False]}
     default_options = {"shared": True}
     requires = "OpenSSL/1.1.1@conan/stable"
     source_folder = "net-snmp"
-    exports = "net-snmp.patch"
 
     def configure(self):
         self.options["OpenSSL"].shared = True
@@ -23,10 +28,8 @@ class SnmpConan(ConanFile):
         self.global_system_requirements=True
 
     def source(self):
-        git = tools.Git(folder="net-snmp")
-        git.clone("https://github.com/konataa/net-snmp.git", "master")
         if self.settings.os == "Windows":
-            tools.patch(patch_file="net-snmp.patch", base_path=os.path.join(os.getcwd(), "net-snmp"))
+            tools.patch(patch_file="net-snmp\\net-snmp.patch", base_path=os.path.join(os.getcwd(), "net-snmp"))
 
     def linux_build(self):
         env_build = AutoToolsBuildEnvironment(self)
@@ -52,7 +55,7 @@ class SnmpConan(ConanFile):
         config_command = "perl build.pl"
         self.output.warn(config_command)
         with tools.chdir(os.path.join(self.source_folder, "net-snmp\\win32")):
-            self.run(config_command, win_bash=True)
+            self.run(config_command)
         self.output.writeln(" ")
 
     def build(self):

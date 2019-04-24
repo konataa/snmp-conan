@@ -1,6 +1,6 @@
 #include <iostream>
-
+#include <net-snmp/net-snmp-config.h>
 int main() {
-    std::cout << "Hello" << std::endl;
+    std::cout << NETSNMP_AGENTID << std::endl;
     return 0;
 }

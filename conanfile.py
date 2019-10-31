@@ -6,7 +6,7 @@ class SnmpConan(ConanFile):
     version = "5.8"
     license = "http://net-snmp.sourceforge.net/about/license.html"
     url = "https://sourceforge.net/projects/net-snmp/files/net-snmp/5.8/net-snmp-5.8.tar.gz"
-    author = "Amina Ramazanova / InSAT"
+    author = "Amina Ramazanova / InSAT Company"
     description = "net-snmp package"
     topics = ("net-snmp", "snmp")
     scm = {
